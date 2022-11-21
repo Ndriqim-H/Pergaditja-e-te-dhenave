@@ -88,42 +88,9 @@ def writeToFile():
             arr.append(re.sub("\d+ min ", "",j))
     
     all_titles = strong_titles + span_titles + arr
-    if not posts:
-        return {}
 
-    titles = []
-    authors = []
-    comments = []
-    likes = []
 
-    for post in posts:
-        titles.append(post.find(class_='title').get_text())
-        authors.append(post.find(class_='author').get_text())
-
-        if not(post.find(class_='comments') is None):
-
-            comment_count = (post.find(class_='comments').text).split(" ")[0]
-            if (comment_count == 'comment'):
-                comment_count = '0'
-        else:
-            comment_count = '0'
-
-        comments.append(comment_count)
-        if (post.find("div", attrs={"class": "score likes"}) is None):
-            like_count = 0
-            likes.append(like_count)
-        else:
-            like_count = post.find(
-                "div", attrs={"class": "score likes"}).text.lower()
-
-            if like_count == "•":
-                likes.append(0)
-            elif(like_count.islower()):
-                like_count = like_count.replace('k', '')
-                likes.append(int(float(like_count)*1000))
-            else:
-                likes.append(int(like_count))
-
-    return {"Titles": titles, "Authors": authors, "Comments": comments, "Likes": likes}
-
-print(writeToFile())
+    return all_titles
+array = writeToFile()
+print("\n","="*150,"\n")
+[print(i) for i in array]
