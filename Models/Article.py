@@ -7,7 +7,6 @@ class Article:
     self.title = title
     self.category = category
     self.main_photo = main_photo
-    self.excerpt = excerpt
     self.content = content
     self.video = video
     self.keywords = keywords
