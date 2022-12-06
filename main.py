@@ -1,6 +1,7 @@
 ## import libraries
 import csv
 import time
+import os.path
 from selenium import webdriver
 import undetected_chromedriver as uc
 from selenium.webdriver.support.ui import WebDriverWait
@@ -45,17 +46,20 @@ def getData():
         print ("Loading took too much time!")
 
     ## load more articles (10 times)
-    for i in range(10):
-        time.sleep(3)
-        driver.find_element(By.CLASS_NAME, 'load-more').click()
+    # for i in range(300):
+    #     time.sleep(2)
+    #     driver.find_element(By.CLASS_NAME, 'load-more').click()
 
-    articles = driver.find_elements(By.CLASS_NAME, 'fcArticle')
+    # articles = driver.find_elements(By.CLASS_NAME, 'fcArticle')
     articles_list = []
-    articles_urls = []
-    for article in articles:
-        url = article.find_element(By.TAG_NAME, 'a').get_attribute("href")
-        articles_urls.append(url)
+    # articles_urls = []
 
+    # for article in articles:
+    #     url = article.find_element(By.TAG_NAME, 'a').get_attribute("href")
+    #     articles_urls.append(url)
+
+    # writeUrlsToFile(articles_urls)
+    articles_urls = getArticlesUrls()
     for url in articles_urls:
         try:
             if(url == ""):
@@ -71,8 +75,8 @@ def getData():
 
 def getArticleDetails(article_url):
     try:
-        driver.get(article_url)
-        time.sleep(1)
+        driver.get(article_url[0])
+        time.sleep(2)
         id = ""
         article_id = ""
         article_title = driver.find_element(By.CLASS_NAME, 'article-heading').find_element(By.TAG_NAME, "h1").text
@@ -94,25 +98,58 @@ def getArticleDetails(article_url):
         print("Error!")
         return None
 
-def writeToFile(data): 
-    with open('tech_articles.csv', 'w', encoding='utf-8') as file:
-        try:                
-            writer = csv.writer(file)
-            writer.writerow(columns)
-            article_no = 0
-            for article in data:
-                article_no += 1
-                article = [article_no, id(article), article.title, article.url, article.category, article.main_photo, article.content, 
-                            article.video, article.keywords, article.comments, article.posted_at]
-                writer.writerow(article)
-        except:
-            print("Error - writing to file")
+def writeUrlsToFile(urls):
+    with open('tech_articles_urls.csv', 'w', encoding='utf-8') as file:
+            try:                
+                writer = csv.writer(file)
+                writer.writerow(url_column)
+                for url in urls:
+                    row = [url]
+                    writer.writerow(row)
+            except:
+                print("Error - writing url to csv file")
 
+def writeToFile(data): 
+    file_exists = os.path.exists('tech_articles.csv')
+    if file_exists:
+        with open('tech_articles.csv', 'a', encoding='utf-8') as file:
+            try:
+                writer = csv.writer(file)
+                for article in data:
+                    article = [id(article), article.title, article.url, article.category, article.main_photo, article.content, 
+                                article.video, article.keywords, article.comments, article.posted_at]
+                    writer.writerow(article)
+            except:
+                print('Error - updating to csv file')
+    else:
+        with open('tech_articles.csv', 'w', encoding='utf-8') as file:
+            try:                
+                writer = csv.writer(file)
+                writer.writerow(columns)
+                for article in data:
+                    article = [id(article), article.title, article.url, article.category, article.main_photo, article.content, 
+                                article.video, article.keywords, article.comments, article.posted_at]
+                    writer.writerow(article)
+            except:
+                print("Error - writing to csv file")
+
+def getArticlesUrls():
+    urls = []
+    try:
+        with open('tech_articles_urls.csv', 'r', encoding='utf-8') as file:
+            # data = file.read()
+            data = csv.reader(file, delimiter = ',')
+            for row in data:
+                if len(row) <= 0 or row == ['url']: continue
+                urls.append(row)
+    except:
+        print('Error - reading the articles urls')
+    return urls
 # -------------------------------------------------------------- M A I N ---------------------------------------------------------
 
 # Columns of the dataset
-columns = ['article_no', 'id', 'title', 'url', 'category', 'main_photo', 'content', 'video', 'keywords', 'comments', 'posted_at']
-
+columns = ['id', 'title', 'url', 'category', 'main_photo', 'content', 'video', 'keywords', 'comments', 'posted_at']
+url_column = ['url']
 # The actual data
 data = getData()
 
