@@ -2,12 +2,15 @@
 import csv
 import time
 import os.path
+from datetime import timedelta, datetime
 from selenium import webdriver
 import undetected_chromedriver as uc
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 from selenium.common.exceptions import TimeoutException
+
+tech_allowed_keywords = ["telefon", "post", "operator", "internet", "siguri kiberbetike", "sulm kibernetik", "kibernetik"]
 
 class Article:
     def __init__(self, article_no, id, title, url, category, main_photo, content, video, keywords, comments, posted_at):
@@ -45,26 +48,36 @@ def getData():
     except TimeoutException:
         print ("Loading took too much time!")
 
-    ## load more articles (10 times)
-    # for i in range(300):
-    #     time.sleep(2)
-    #     driver.find_element(By.CLASS_NAME, 'load-more').click()
-
-    # articles = driver.find_elements(By.CLASS_NAME, 'fcArticle')
-    articles_list = []
-    # articles_urls = []
-
-    # for article in articles:
-    #     url = article.find_element(By.TAG_NAME, 'a').get_attribute("href")
-    #     articles_urls.append(url)
-
-    # writeUrlsToFile(articles_urls)
-    articles_urls = getArticlesUrls()
-    for url in articles_urls:
+    # load more articles (10 times)
+    for i in range(200):
+        time.sleep(2)
         try:
+            driver.find_element(By.CLASS_NAME, 'load-more').click()
+        except:
+            print("Error, load more could not be found!")
+            break
+    articles = driver.find_elements(By.CLASS_NAME, 'fcArticle')
+    articles_list = []
+    articles_urls = []
+
+    for article in articles:
+        url = article.find_element(By.TAG_NAME, 'a').get_attribute("href")
+        articles_urls.append(url)
+
+    # articles_urls = getArticlesUrls()
+    for url in articles_urls:
+        try:    
             if(url == ""):
                 continue
             article_detail = getArticleDetails(url)
+            latest_existing_article_datetime = getLatestArticleDateTime()
+            if latest_existing_article_datetime is not None:
+                latest_existing_article_datetime = datetime.strptime(latest_existing_article_datetime, '%d.%m.%Y %H:%M:%S')
+                article_posted_at = datetime.strptime(article_detail.posted_at, '%d.%m.%Y %H:%M:%S')
+                if (article_posted_at <= latest_existing_article_datetime):
+                    break
+            if not checkIfTheArticleContainsKeywords(article_detail.title):
+                continue
             if(article_detail is None):
                 continue
             articles_list.append(article_detail)
@@ -73,9 +86,21 @@ def getData():
 
     return articles_list
 
+def checkTheLatestExistingArticle(latest_article_datetime):
+    pass
+
+def checkIfTheArticleContainsKeywords(title):
+    article_title = title.lower()
+    for keyword in tech_allowed_keywords:
+        if keyword in article_title:
+            return True
+        else:
+            continue
+    return False
+
 def getArticleDetails(article_url):
     try:
-        driver.get(article_url[0])
+        driver.get(article_url)
         time.sleep(2)
         id = ""
         article_id = ""
@@ -87,7 +112,22 @@ def getArticleDetails(article_url):
         article_keywords = driver.find_element(By.CLASS_NAME, "article-tags").text
         article_comments = ""
         article_posted_at = driver.find_element(By.CLASS_NAME, 'article-posted').text
-        article_posted_at = article_posted_at if "orë" not in article_posted_at else (article_posted_at + " më parë")
+        if "orë" in article_posted_at:
+            hours_ = article_posted_at.split(" ")[0]
+            date_ = datetime.today() - timedelta(hours = int(hours_))
+            date_ = date_.strftime('%d.%m.%Y %H:%M:%S')
+            article_posted_at = date_
+        else:
+            _date = article_posted_at.split("•")[0]
+            _day = _date.split(".")[0]
+            _month = _date.split(".")[1]
+            _year = _date.split(".")[2]
+
+            _time = article_posted_at.split("•")[1]
+            _hour = _time.split(":")[0]
+            _minute = _time.split(":")[1]
+
+            article_posted_at = datetime(int(_year), int(_month), int(_day), int(_hour), int(_minute), 0).strftime('%d.%m.%Y %H:%M:%S')
 
         article = Article(id, article_id, article_title, article_url, article_category,
                         article_main_photo, article_content, article_video,  
@@ -98,21 +138,10 @@ def getArticleDetails(article_url):
         print("Error!")
         return None
 
-def writeUrlsToFile(urls):
-    with open('tech_articles_urls.csv', 'w', encoding='utf-8') as file:
-            try:                
-                writer = csv.writer(file)
-                writer.writerow(url_column)
-                for url in urls:
-                    row = [url]
-                    writer.writerow(row)
-            except:
-                print("Error - writing url to csv file")
-
 def writeToFile(data): 
-    file_exists = os.path.exists('tech_articles.csv')
+    file_exists = os.path.exists('telegrafi_tech_articles.csv')
     if file_exists:
-        with open('tech_articles.csv', 'a', encoding='utf-8') as file:
+        with open('telegrafi_tech_articles.csv', 'a', encoding='utf-8') as file:
             try:
                 writer = csv.writer(file)
                 for article in data:
@@ -122,7 +151,7 @@ def writeToFile(data):
             except:
                 print('Error - updating to csv file')
     else:
-        with open('tech_articles.csv', 'w', encoding='utf-8') as file:
+        with open('telegrafi_tech_articles.csv', 'w', encoding='utf-8') as file:
             try:                
                 writer = csv.writer(file)
                 writer.writerow(columns)
@@ -133,18 +162,19 @@ def writeToFile(data):
             except:
                 print("Error - writing to csv file")
 
-def getArticlesUrls():
-    urls = []
+def getLatestArticleDateTime():
+    posted_at_datetimes = []
     try:
-        with open('tech_articles_urls.csv', 'r', encoding='utf-8') as file:
+        with open('telegrafi_tech_articles.csv', 'r', encoding='utf-8') as file:
             # data = file.read()
             data = csv.reader(file, delimiter = ',')
             for row in data:
-                if len(row) <= 0 or row == ['url']: continue
-                urls.append(row)
+                if len(row) <= 0 or "posted_at" in row: continue
+                posted_at_datetimes.append(row[9])
     except:
-        print('Error - reading the articles urls')
-    return urls
+        return None
+        
+    return posted_at_datetimes[0]
 # -------------------------------------------------------------- M A I N ---------------------------------------------------------
 
 # Columns of the dataset

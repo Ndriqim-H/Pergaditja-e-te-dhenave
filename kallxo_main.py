@@ -2,12 +2,15 @@
 import csv
 import time
 import os.path
+from datetime import datetime
 from selenium import webdriver
 import undetected_chromedriver as uc
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 from selenium.common.exceptions import TimeoutException
+
+tech_allowed_keywords = ["telefon", "post", "operator", "internet", "siguri kiberbetike", "sulm kibernetik", "kibernetik"]
 
 class Article:
     def __init__(self, article_no, id, title, url, category, main_photo, content, video, keywords, comments, posted_at, author_name, author_photo):
@@ -48,26 +51,35 @@ def getData():
     #     print ("Loading took too much time!")
 
     # load more articles (10 times)
-    # for i in range(100):
-    #     time.sleep(2)
-    #     driver.find_element(By.CLASS_NAME, 'loadmore-inf').click()
-
-    # articles = driver.find_elements(By.CLASS_NAME, 'post_item__thumb')
+    for i in range(200):
+        try:
+            time.sleep(2)
+            driver.find_element(By.CLASS_NAME, 'loadmore-inf').click()
+        except:
+            print("Error, load more could not be found!")
+            break
+    articles = driver.find_elements(By.CLASS_NAME, 'post_item__thumb')
+    articles_titles = driver.find_elements(By.CLASS_NAME, 'post_item__content')
     articles_list = []
-    # articles_urls = []
+    articles_urls = []
 
-    # for article in articles:
-    #     url = article.find_element(By.TAG_NAME, 'a').get_attribute("href")
-    #     articles_urls.append(url)
+    for article, title in zip(articles, articles_titles):
+        url = article.find_element(By.TAG_NAME, 'a').get_attribute("href")
+        articles_urls.append(url)
 
-    # writeUrlsToFile(articles_urls)
-
-    articles_urls = getArticlesUrls()
     for url in articles_urls:
         try:
             if(url == ""):
                 continue
             article_detail = getArticleDetails(url)
+            latest_existing_article_datetime = getLatestArticleDateTime()
+            if latest_existing_article_datetime is not None:
+                latest_existing_article_datetime = datetime.strptime(latest_existing_article_datetime, '%d.%m.%Y %H:%M:%S')
+                article_posted_at = datetime.strptime(article_detail.posted_at, '%d.%m.%Y %H:%M:%S')
+                if (article_posted_at <= latest_existing_article_datetime):
+                    break
+            if not checkIfTheArticleContainsKeywords(article_detail.title):
+                continue
             if(article_detail is None):
                 continue
             articles_list.append(article_detail)
@@ -76,9 +88,21 @@ def getData():
 
     return articles_list
 
+def checkTheLatestExistingArticle(latest_article_datetime):
+    pass
+
+def checkIfTheArticleContainsKeywords(title):
+    article_title = title.lower()
+    for keyword in tech_allowed_keywords:
+        if keyword in article_title:
+            return True
+        else:
+            continue
+    return False
+
 def getArticleDetails(article_url):
     try:
-        driver.get(article_url[0])
+        driver.get(article_url)
         id = ""
         article_id = ""
         article_title = driver.find_element(By.CLASS_NAME, 'single_article').find_element(By.CLASS_NAME, 'single_article__header').find_element(By.TAG_NAME, "h1").text
@@ -95,6 +119,16 @@ def getArticleDetails(article_url):
             article_keywords += tag.text + ", "
         article_comments = ""
         article_posted_at = driver.find_element(By.CLASS_NAME, 'post_date').text
+        _date = article_posted_at.split("-")[0]
+        _day = _date.split(".")[0]
+        _month = _date.split(".")[1]
+        _year = _date.split(".")[2]
+
+        _time = article_posted_at.split("-")[1]
+        _hour = _time.split(":")[0]
+        _minute = _time.split(":")[1]
+
+        article_posted_at = datetime(int(_year), int(_month), int(_day), int(_hour), int(_minute), 0).strftime('%d.%m.%Y %H:%M:%S')
         # article_posted_at = article_posted_at if "orë" not in article_posted_at else (article_posted_at + " më parë")
         article_author_name = driver.find_element(By.CLASS_NAME, 'single_article__author__name').text
         # article_author_photo = driver.find_element(By.CLASS_NAME, 'single_article__author__thumb').find_element(By.TAG_NAME, "img").get_attribute("src")
@@ -119,18 +153,18 @@ def writeUrlsToFile(urls):
             except:
                 print("Error - writing url to csv file")
 
-def getArticlesUrls():
-    urls = []
+def getLatestArticleDateTime():
+    posted_at_datetimes = []
     try:
-        with open('kallxo_tech_articles_urls.csv', 'r', encoding='utf-8') as file:
+        with open('kallxo_tech_articles.csv', 'r', encoding='utf-8') as file:
             # data = file.read()
             data = csv.reader(file, delimiter = ',')
             for row in data:
-                if len(row) <= 0 or row == ['url']: continue
-                urls.append(row)
+                if len(row) <= 0 or "posted_at" in row: continue
+                posted_at_datetimes.append(row[9])
     except:
-        print('Error - reading the articles urls')
-    return urls
+        return None
+    return posted_at_datetimes[0]
 
 def writeToFile(data): 
     file_exists = os.path.exists('kallxo_tech_articles.csv')
