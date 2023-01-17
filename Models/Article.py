@@ -1,14 +1,12 @@
 class Article:
 
-  def __init__(self, article_no, id, title, category, main_photo, excerpt, content, video, keywords, comments, posted_at):
+  def __init__(self, title, url, category, main_photo, content, keywords, posted_at, rank):
 
-    self.article_no = article_no
-    self.id = id
     self.title = title
+    self.url = url
     self.category = category
     self.main_photo = main_photo
     self.content = content
-    self.video = video
     self.keywords = keywords
-    self.comments = comments
     self.posted_at = posted_at
+    self.rank = rank

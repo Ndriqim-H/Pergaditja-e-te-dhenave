@@ -10,21 +10,26 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 from selenium.common.exceptions import TimeoutException
 
+## import the other modules
+import Database.ArticleService
+import Models.Article
+
 tech_allowed_keywords = ["telefon", "post", "operator", "internet", "siguri kiberbetike", "sulm kibernetik", "kibernetik"]
 
-class Article:
-    def __init__(self, article_no, id, title, url, category, main_photo, content, video, keywords, comments, posted_at):
-        self.article_no = article_no
-        self.id = id
-        self.title = title
-        self.url = url
-        self.category = category
-        self.main_photo = main_photo
-        self.content = content
-        self.video = video
-        self.keywords = keywords
-        self.comments = comments
-        self.posted_at = posted_at  
+# class Article:
+#     def __init__(self, article_no, id, title, url, category, main_photo, content, video, keywords, comments, posted_at):
+#         self.article_no = article_no
+#         self.id = id
+#         self.title = title
+#         self.url = url
+#         self.category = category
+#         self.main_photo = main_photo
+#         self.content = content
+#         self.video = video
+#         self.keywords = keywords
+#         self.comments = comments
+#         self.posted_at = posted_at  
+
 
 driver = webdriver.Chrome(executable_path=r"./chromedriver.exe")
 options = webdriver.ChromeOptions() 
@@ -48,14 +53,15 @@ def getData():
     except TimeoutException:
         print ("Loading took too much time!")
 
-    # load more articles (10 times)
-    for i in range(200):
+    # load more articles (50 times)
+    for i in range(1):
         time.sleep(2)
         try:
             driver.find_element(By.CLASS_NAME, 'load-more').click()
         except:
             print("Error, load more could not be found!")
             break
+
     articles = driver.find_elements(By.CLASS_NAME, 'fcArticle')
     articles_list = []
     articles_urls = []
@@ -70,6 +76,7 @@ def getData():
             if(url == ""):
                 continue
             article_detail = getArticleDetails(url)
+            Database.ArticleService.InsertArticle(article_detail)
             latest_existing_article_datetime = getLatestArticleDateTime()
             if latest_existing_article_datetime is not None:
                 latest_existing_article_datetime = datetime.strptime(latest_existing_article_datetime, '%d.%m.%Y %H:%M:%S')
@@ -102,15 +109,11 @@ def getArticleDetails(article_url):
     try:
         driver.get(article_url)
         time.sleep(2)
-        id = ""
-        article_id = ""
         article_title = driver.find_element(By.CLASS_NAME, 'article-heading').find_element(By.TAG_NAME, "h1").text
         article_category = driver.find_element(By.CLASS_NAME, 'article-category').text
         article_main_photo = driver.find_element(By.CLASS_NAME, 'featured-image').find_element(By.TAG_NAME, "figure").find_element(By.TAG_NAME, "img").get_attribute("src")
         article_content = driver.find_element(By.CLASS_NAME, "article-body").text
-        article_video = ""
         article_keywords = driver.find_element(By.CLASS_NAME, "article-tags").text
-        article_comments = ""
         article_posted_at = driver.find_element(By.CLASS_NAME, 'article-posted').text
         if "orë" in article_posted_at:
             hours_ = article_posted_at.split(" ")[0]
@@ -128,10 +131,11 @@ def getArticleDetails(article_url):
             _minute = _time.split(":")[1]
 
             article_posted_at = datetime(int(_year), int(_month), int(_day), int(_hour), int(_minute), 0).strftime('%d.%m.%Y %H:%M:%S')
+        article_rank = 0
 
-        article = Article(id, article_id, article_title, article_url, article_category,
-                        article_main_photo, article_content, article_video,  
-                        article_keywords, article_comments, article_posted_at)
+        article = Models.Article.Article(article_title, article_url, article_category,
+                                         article_main_photo, article_content,  
+                                         article_keywords, article_posted_at, article_rank)
 
         return article
     except:
@@ -139,9 +143,9 @@ def getArticleDetails(article_url):
         return None
 
 def writeToFile(data): 
-    file_exists = os.path.exists('telegrafi_tech_articles.csv')
+    file_exists = os.path.exists('telegrafi_tech_articles_2.csv')
     if file_exists:
-        with open('telegrafi_tech_articles.csv', 'a', encoding='utf-8') as file:
+        with open('telegrafi_tech_articles_2.csv', 'a', encoding='utf-8') as file:
             try:
                 writer = csv.writer(file)
                 for article in data:
@@ -151,7 +155,7 @@ def writeToFile(data):
             except:
                 print('Error - updating to csv file')
     else:
-        with open('telegrafi_tech_articles.csv', 'w', encoding='utf-8') as file:
+        with open('telegrafi_tech_articles_2.csv', 'w', encoding='utf-8') as file:
             try:                
                 writer = csv.writer(file)
                 writer.writerow(columns)
@@ -165,7 +169,7 @@ def writeToFile(data):
 def getLatestArticleDateTime():
     posted_at_datetimes = []
     try:
-        with open('telegrafi_tech_articles.csv', 'r', encoding='utf-8') as file:
+        with open('telegrafi_tech_articles_2.csv', 'r', encoding='utf-8') as file:
             # data = file.read()
             data = csv.reader(file, delimiter = ',')
             for row in data:
