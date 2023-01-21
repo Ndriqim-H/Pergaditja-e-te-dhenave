@@ -1,7 +1,7 @@
 class Article:
 
-  def __init__(self, title, url, category, main_photo, content, keywords, posted_at, rank):
-
+  def __init__(self, title, url, category, main_photo, content, keywords, posted_at, rank, website):
+    
     self.title = title
     self.url = url
     self.category = category
@@ -10,3 +10,4 @@ class Article:
     self.keywords = keywords
     self.posted_at = posted_at
     self.rank = rank
+    self.website = website

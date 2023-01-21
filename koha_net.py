@@ -24,20 +24,22 @@ driver = uc.Chrome(options=options)
 
 def getData():
     ## the tech section on Telegraf
-    tech_section_url = "https://telegrafi.com/teknologji/"
+    tech_section_url = "https://www.koha.net/arkivi/?acid=tech"
+    website = "Koha"
+    latest_existing_article_datetime = ArticleService.GetLatestArticleDateTime(website)
 
     delay = 10 # timeout (seconds)
 
     driver.get(tech_section_url)
 
-    ## redirect to the technology section
-    driver.find_element(By.CLASS_NAME, 'go-to-category').click()
-
     try:
-        WebDriverWait(driver, delay).until(EC.presence_of_element_located((By.CLASS_NAME, 'lineClamp')))
+        WebDriverWait(driver, delay).until(EC.presence_of_element_located((By.CLASS_NAME, 'form-control')))
         print ("Page is ready!")
     except TimeoutException:
         print ("Loading took too much time!")
+
+    # select the datetime range
+    driver.find_element(By.CLASS_NAME, 'form-control').click()
 
     # load more articles
     for i in range(3):
@@ -55,7 +57,6 @@ def getData():
         url = article.find_element(By.TAG_NAME, 'a').get_attribute("href")
         articles_urls.append(url)
     
-    latest_existing_article_datetime = ArticleService.GetLatestArticleDateTime()
 
     for url in articles_urls:
         try:    
