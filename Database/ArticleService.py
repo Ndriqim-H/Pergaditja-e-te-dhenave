@@ -19,6 +19,7 @@ def InsertArticle(article):
         print("An article has been successfully inserted in the DB!")
     except Exception as e:
         print("Error - ", e)
+        
 def GetLatestArticleDateTime(website):
     cursor = cnxn.cursor()
     query = f"SELECT TOP 1 Posted_at FROM Articles WHERE Website = '{website}' ORDER BY Posted_At DESC;"
