@@ -3,7 +3,8 @@ import datetime
 import re
 # Connect to the database
 cnxn = pyodbc.connect('DRIVER={SQL Server};'
-                      'SERVER=.\;'
+                      'SERVER=Ndriqa\SQLEXPRESS;'
+                      'PORT=1433;'
                       'DATABASE=News_Site;'
                       'Trusted_Connection=yes')
 
