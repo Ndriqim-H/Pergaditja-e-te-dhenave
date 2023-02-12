@@ -11,7 +11,7 @@ from selenium.webdriver.common.by import By
 from selenium.common.exceptions import TimeoutException
 
 ## Import the other modules
-import Database.ArticleService as _articleService
+import Database.ArticleService as articleService
 import Models.Article as Article
 import Helpers.utils as utils
 
@@ -20,7 +20,7 @@ driver = webdriver.Chrome(executable_path=r"C:\webdrivers.exe")
 options = webdriver.ChromeOptions()
 options.add_argument("start-maximized")
 driver = uc.Chrome(options=options)
-
+_articleService = articleService.dbClass()
 web_portal = "Kallxo"
 
 def getData():
@@ -127,7 +127,7 @@ def getArticleDetails(article_url):
 
 # ------------------------------------------------------------ M A I N ---------------------------------------------------------
 
-data = getData()
+# data = getData()
 
 # ------------------------------------------------------------------------------------------------------------------------------ 
 
