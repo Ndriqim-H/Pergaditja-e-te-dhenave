@@ -1,12 +1,13 @@
 import pyodbc
 import re 
-
+from ArticleService import dbClass
 # Connect to the database
-cnxn = pyodbc.connect('DRIVER={SQL Server};'
-                      'SERVER=Ndriqa\SQLEXPRESS;'
-                      'PORT=1433;'
-                      'DATABASE=News_Site;'
-                      'Trusted_Connection=yes')
+# cnxn = pyodbc.connect('DRIVER={SQL Server};'
+#                       'SERVER=Ndriqa\SQLEXPRESS;'
+#                       'PORT=1433;'
+#                       'DATABASE=News_Site;'
+#                       'Trusted_Connection=yes')
+cnxn = dbClass.cnxn
 
 def GetAllTargetKeywords():
     result = []
@@ -25,3 +26,6 @@ def GetAllTargetKeywords():
     cnxn.close()
 
     return result
+
+test = GetAllTargetKeywords()
+print("asda")

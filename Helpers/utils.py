@@ -1,9 +1,10 @@
 import re
 from datetime import timedelta, datetime
-import Database.TargetKeywordsService as _targetKeywordService
+import Database.ArticleService as _targetKeywordService
 
 ## Get the target keywords from DB
-target_keywords = _targetKeywordService.GetAllTargetKeywords()
+obj = _targetKeywordService.dbClass()
+target_keywords = obj.GetAllTargetKeywords()
 
 def checkIfTheArticleContainsKeywords(article):
     rank = 0

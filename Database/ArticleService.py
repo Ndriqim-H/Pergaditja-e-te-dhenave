@@ -74,6 +74,25 @@ class dbClass:
                         'Trusted_Connection=yes')
         # return cnxn
 
+
+    def GetAllTargetKeywords(self):
+        result = []
+        cursor = dbClass.cnxn.cursor()
+
+        query = f"SELECT Name FROM TargetKeywords;"
+
+        cursor.execute(query)
+        all_rows = cursor.fetchall()
+        for row in all_rows:
+            row = re.sub(",|\)|\(| ", '', str(row))
+            row = re.sub("'", '', str(row))
+            result.append(row)
+
+        cursor.close()
+        dbClass.cnxn.close()
+
+        return result
+
     def CloseConnection(self):
         dbClass.cnxn.close()
 
